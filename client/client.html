@@ -1,13 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <title>Our simple HTTP server</title>
   <link rel="stylesheet" type="text/css" href="/style.css">
-  
+
   <script>
 
+
+    const handleResponse = (response) => {
+      let test = document.querySelector("#test");
+      let e = document.querySelector("#page");
+      let text = e.options[e.selectedIndex].text;
+      const content = document.querySelector('#content');
+      const h1 = document.querySelector('#status');
+      const p = document.querySelector('#message');
+
+      const contentType = response.headers.get('Content-Type');
+
+
+      response.text().then((resText) => {
+        console.log(resText);
+
+        if (contentType === 'application/json') {
+          const parsedResponse = JSON.parse(resText);
+          h1.textContent = `${text}`;
+          p.textContent = `Message: ${parsedResponse.message}`;
+        } else if (contentType === 'text/xml') {
+          const parsedResponse = new window.DOMParser().parseFromString(resText, 'text/xml');
+          h1.textContent = `${text}`;
+          p.textContent = parsedResponse.querySelector('message').textContent;
+        }
+
+
+
+      });
+
+      content.appendChild(h1);
+      content.appendChild(p);
+
+
+    };
+
+    const sendFetchRequest = (url, acceptedType) => {
+
+      const options = {
+        method: 'GET',
+        headers: { 'Accept': acceptedType },
+      }
+
+      const fetchPromise = fetch(url, options);
+
+      fetchPromise.then((response) => { handleResponse(response) });
+    };
+
+    const switchURL = (value, type) => {
+      sendFetchRequest(value, type);
+    }
+
+
+    const init = () => {
+      const jsonButton = document.querySelector("#send");
+      let type = document.querySelector("#type").value;
+      document.querySelector("#type").addEventListener("change", function () {
+        type = document.querySelector("#type").value;
+      });
+      let e = document.querySelector("#page");
+      let page = e.options[e.selectedIndex].value;
+      e.addEventListener("change", function () {
+        page = e.options[e.selectedIndex].value;
+      });
+
+      const sendJSON = () => switchURL(page, type);
+      jsonButton.addEventListener('click', sendJSON);
+    };
+
+    window.onload = init;
   </script>
 </head>
+
 <body>
   <section id="top">
     <h3>Status Code Tests</h3>
@@ -27,6 +98,10 @@
     <button id="send">Send</button>
   </section>
   <section id="content">
+    <h1 id="test"></h1>
+    <h1 id="status"></h1>
+    <p id="message"></p>
   </section>
 </body>
+
 </html>
